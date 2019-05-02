@@ -1,0 +1,52 @@
+version: "3.0"
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  project-public-folder:
+
+services:
+  nginx:
+    image: nginx:latest
+
+    volumes:
+      - ./nginx/logs:/var/log/nginx/
+      - ./nginx/conf.d/app.conf:/etc/nginx/conf.d/app.conf
+      - project-public-folder:/var/www/html/public:ro
+
+    ports:
+      - 80:80
+
+    networks:
+      - internal
+
+    depends_on:
+      - my-php-app
+
+  my-php-app:
+    build: ./docker-build-context
+    image: my-php-app:latest
+    volumes:
+      - project-public-folder:/var/www/html/public
+
+    networks:
+      - internal
+
+    depends_on:
+      - mysqldb
+
+  mysqldb:
+    image: mysql:5.7
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_DATABASE=sample
+      - MYSQL_USER=test
+      - MYSQL_PASSWORD=test
+
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+
+    networks:
+      - internal
